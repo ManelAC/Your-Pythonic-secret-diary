@@ -1,4 +1,5 @@
 from diaries_management import *
+from gui_functions import *
 
 
 def main_menu():
@@ -16,25 +17,7 @@ def main():
     if not does_diaries_folder_exist():
         os.mkdir(get_diaries_folder_path())
 
-    chosen_option = 0
-
-    while chosen_option != 4:
-        chosen_option = main_menu()
-
-        if chosen_option == 1:
-            list_available_diaries()
-        elif chosen_option == 2:
-            open_diary()
-        elif chosen_option == 3:
-            create_diary()
-        elif chosen_option == 4:
-            pass
-        else:
-            print("Wrong option")
-
-        print("\n")
-
-    print("\nThanks for using this program!")
+    draw_gui()
 
 
 if __name__ == "__main__":
