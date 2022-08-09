@@ -2,6 +2,8 @@ import os
 import sqlite3
 import base64
 import bcrypt
+import tkinter
+from tkinter import ttk
 
 
 def opened_diary_menu():
@@ -228,61 +230,107 @@ def open_diary():
                 print("Wrong option")
 
 
-def create_diary():
-    diary_name = input("Introduce the diary name: ")
+def create_message_window(base_window, error_text, message_type):
+    # If message type == 0, it's an error message
+    # If message type == 1, it's a success message
+
+    message_window = tkinter.Toplevel()
+    if message_type == 0:
+        message_window.title("Error")
+    elif message_type == 1:
+        message_window.title("Success")
+
+    screen_width = base_window.winfo_screenwidth()
+    screen_height = base_window.winfo_screenheight()
+
+    diary_window_width = 0
+
+    if message_type == 0:
+        diary_window_width = 400
+    elif message_type == 1:
+        diary_window_width = 200
+
+    diary_window_height = 100
+
+    center_x = int(screen_width / 2 - diary_window_width / 2)
+    center_y = int(screen_height / 2 - diary_window_height / 2)
+
+    # message_window.geometry(f'{diary_window_width}x{diary_window_height}+{center_x}+{center_y}')
+    message_window.geometry(f'+{center_x}+{center_y}')
+
+    message_window.attributes('-topmost', True)
+    message_window.focus_force()
+    message_window.update()
+    message_window.attributes('-topmost', False)
+
+    if message_type == 0:
+        message_window.iconbitmap('../assets/cross.ico')
+    elif message_type == 1:
+        message_window.iconbitmap('../assets/check.ico')
+
+    text_label = ttk.Label(message_window, text=error_text)
+    accept_button = ttk.Button(message_window, text="Accept", command=lambda: message_window.destroy())
+
+    message_window.columnconfigure(1, weight=1)
+
+    message_window.rowconfigure(1)
+    message_window.rowconfigure(2)
+
+    text_label.grid(column=1, row=1, padx=10, pady=5)
+    accept_button.grid(column=1, row=2, padx=10, pady=5)
+
+
+def create_diary(base_window, diary_name, diary_description, diary_password):
     diary_path = f"{get_diaries_folder_path()}/{diary_name}{get_diaries_extension()}"
 
-    while os.path.isfile(diary_path):
-        print("This diary already exists, try again.")
-        diary_name = input("Introduce the diary name: ")
-        diary_path = f"{get_diaries_folder_path()}/{diary_name}{get_diaries_extension()}"
+    can_create_diary = True
+    diary_already_exists = False
 
-    while not is_diary_name_valid(diary_name):
-        aux_string = f"The following characters are not allowed: {get_non_valid_characters()}, try again."
-        print(aux_string)
-        diary_name = input("Introduce the diary name: ")
+    if os.path.isfile(diary_path):
+        error_text = "A diary with this name already exist, pick a new name."
+        create_message_window(base_window, error_text, 0)
+        can_create_diary = False
+        diary_already_exists = True
 
-    diary_description = input("Introduce the diary description: ")
+    if not is_diary_name_valid(diary_name):
+        error_text = f"The following characters are not allowed: {get_non_valid_characters()}, try again."
+        create_message_window(base_window, error_text, 0)
+        can_create_diary = False
 
-    diary_password = input("Introduce the diary password: ")
+    if len(diary_password) == 0 and not diary_already_exists:
+        error_text = f"The password can't be empty"
+        create_message_window(base_window, error_text, 0)
+        can_create_diary = False
 
     encoded_password = base64.b64encode(diary_password.encode('ascii'))
 
-    correct_password = False
+    if (len(encoded_password) * 3) / 4 > 72:
+        # Reason: https://stackoverflow.com/a/6793638
+        error_text = f"The password is too long"
+        create_message_window(base_window, error_text, 0)
+        can_create_diary = False
 
-    while not correct_password:
-        if len(diary_password) == 0:
-            print("The password can't be empty")
-            diary_password = input("Introduce a new diary password: ")
-        elif (len(encoded_password)*3)/4 > 72:
-            # Reason: https://stackoverflow.com/a/6793638
-            print("The password is too long")
-            diary_password = input("Introduce a new diary password: ")
-        else:
-            correct_password = True
+    if can_create_diary:
+        # We do this to ensure the folder exists, otherwise we can't create the databases for the diaries
+        if not does_diaries_folder_exist():
+            os.mkdir(get_diaries_folder_path())
 
-    # We do this to ensure the folder exists, otherwise we can't create the databases for the diaries
-    if not does_diaries_folder_exist():
-        os.mkdir(get_diaries_folder_path())
+        db_connection = sqlite3.connect(diary_path)
+        cursor = db_connection.cursor()
 
-    db_connection = sqlite3.connect(diary_path)
-    cursor = db_connection.cursor()
+        diary_data_table_sql_create = "CREATE TABLE diary_data (diary_name TEXT, diary_description TEXT, diary_password TEXT);"
+        diary_data_table_sql_insert = "INSERT INTO diary_data VALUES (?, ?, ?)"
+        diary_entries_table_sql_create = "CREATE TABLE diary_entries (entry_id INTEGER PRIMARY KEY, entry_date TEXT, entry_text TEXT);"
 
-    diary_data_table_sql_create = "CREATE TABLE diary_data (diary_name TEXT, diary_description TEXT, diary_password TEXT);"
-    diary_data_table_sql_insert = "INSERT INTO diary_data VALUES (?, ?, ?)"
-    diary_entries_table_sql_create = "CREATE TABLE diary_entries (entry_id INTEGER PRIMARY KEY, entry_date TEXT, entry_text TEXT);"
+        salt = bcrypt.gensalt()
 
-    print("Creating diary...")
+        hashed_diary_password = bcrypt.hashpw(base64.b64encode(diary_password.encode('ascii')), salt)
 
-    salt = bcrypt.gensalt()
+        cursor.execute(diary_data_table_sql_create)
+        cursor.execute(diary_data_table_sql_insert, (diary_name, diary_description, hashed_diary_password))
+        cursor.execute(diary_entries_table_sql_create)
 
-    hashed_diary_password = bcrypt.hashpw(base64.b64encode(diary_password.encode('ascii')), salt)
+        db_connection.commit()
+        db_connection.close()
 
-    cursor.execute(diary_data_table_sql_create)
-    cursor.execute(diary_data_table_sql_insert, (diary_name, diary_description, hashed_diary_password))
-    cursor.execute(diary_entries_table_sql_create)
-
-    db_connection.commit()
-    db_connection.close()
-
-    print("Diary created successfully!")
+        create_message_window(base_window, "Diary created successfully!", 1)

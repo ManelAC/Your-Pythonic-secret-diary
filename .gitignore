@@ -232,4 +232,4 @@ fabric.properties
 # Custom entries
 to_do_list.txt
 diaries/
-assets/diary.png
+assets/*.png

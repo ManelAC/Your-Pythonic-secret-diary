@@ -11,3 +11,5 @@ Requeriments:
 
 Icon from:
 <a href="https://www.flaticon.com/free-icons/diary" title="diary icons">Diary icons created by Freepik - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/error" title="error icons">Error icons created by Ilham Fitrotul Hayat - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/tick" title="tick icons">Tick icons created by Kiranshastry - Flaticon</a>
