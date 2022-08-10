@@ -3,16 +3,39 @@ import sqlite3
 import base64
 import bcrypt
 import tkinter
-from tkinter import ttk
+from tkinter import ttk, filedialog
+
+# Global variables
+global open_diary_var  # The path to the current open diary
+global db_connection
+global cursor
+global global_pass  # Auxiliary variable to store the password for the diary
+global open_entry_bool  # Boolean that stores if there's an open entry or not
+global open_entry_date  # Variable that stores the date of the current open entry
 
 
-def opened_diary_menu():
-    print("\nWhat do you want to do?")
-    print("1) Read entry")
-    print("2) Add entry")
-    print("3) Close this diary")
+# Setters and getters
+def set_open_diary(selected_diary):
+    global open_diary_var
+    open_diary_var = selected_diary
 
-    return int(input("Choose your option: "))
+
+def get_open_diary():
+    return open_diary_var
+
+
+def get_entries_from_open_diary():
+    entry = cursor.execute("SELECT entry_date FROM diary_entries ORDER BY entry_date").fetchall()
+
+    list_aux = []
+
+    for i in range(len(entry)):
+        list_aux.append(entry[i][0])
+
+    for j in range(len(list_aux)):
+        list_aux[j] = date_format_from_db_to_string(list_aux[j])
+
+    return list_aux
 
 
 def get_diaries_folder_path():
@@ -23,52 +46,8 @@ def get_diaries_extension():
     return ".secretdiary"
 
 
-def does_diaries_folder_exist():
-    if os.path.isdir(get_diaries_folder_path()):
-        return True
-    else:
-        return False
-
-
-def print_error_missing_diaries_folder():
-    print("No diaries folder available")
-    print("Restart the program making sure you have writing permissions")
-
-
 def get_non_valid_characters():
     return "<>:\"/\\|?*"
-
-
-def is_diary_name_valid(string):
-    for char in string:
-        if char in get_non_valid_characters():
-            return False
-
-    return True
-
-
-def get_entry_date(cursor):
-    print("\nThese are the available entries:")
-    date_list = cursor.execute("SELECT entry_date FROM diary_entries").fetchall()
-
-    i = 1
-    for elem in date_list:
-        aux_string = f"{i}) {elem[0][6:8]}/{elem[0][4:6]}/{elem[0][0:4]}"
-        print(aux_string)
-        i += 1
-
-    selected_entry = int(input("Which entry you want to read? Select its number: "))
-
-    while selected_entry < 1 or selected_entry > len(date_list):
-        selected_entry = int(input("Wrong entry number, pick again: "))
-
-    return date_list[selected_entry-1][0]
-
-
-def read_entry(cursor):
-    entry = cursor.execute("SELECT entry_text FROM diary_entries WHERE entry_date = :date", {"date": get_entry_date(cursor)}).fetchall()
-
-    print(decrypt_text(entry[0][0]))
 
 
 def get_valid_date():
@@ -102,8 +81,154 @@ def get_valid_date():
     return f"{year:04}{month:02}{day:02}"
 
 
-# A very simple form of encryption
+def set_active_entry(date):
+    global open_entry_bool
+    global open_entry_date
+    open_entry_bool = True
+    open_entry_date = f"{date[6:10]}{date[3:5]}{date[0:2]}"
+
+
+def get_active_entry():
+    return open_entry_date
+
+
+def get_text_from_active_entry():
+    global db_connection
+    global cursor
+    db_connection = sqlite3.connect(open_diary_var)
+    cursor = db_connection.cursor()
+
+    entry = cursor.execute("SELECT entry_text FROM diary_entries WHERE entry_date = :date", {"date": open_entry_date}).fetchall()
+
+    return decrypt_text(entry[0][0])
+
+
+def set_global_pass(password_box, afpw):
+    global global_pass
+    global_pass = password_box.get()
+    afpw.destroy()
+
+
+def get_diary_name():
+    global db_connection
+    global cursor
+    db_connection = sqlite3.connect(open_diary_var)
+    cursor = db_connection.cursor()
+
+    dn = cursor.execute("SELECT diary_name FROM diary_data").fetchall()
+
+    return dn[0][0]
+
+
+# Checking functions
+def does_diaries_folder_exist():
+    if os.path.isdir(get_diaries_folder_path()):
+        return True
+    else:
+        return False
+
+
+def is_diary_name_valid(string):
+    for char in string:
+        if char in get_non_valid_characters():
+            return False
+
+    return True
+
+
+# Other functions
+def date_format_from_db_to_string(string_to_convert):
+    # Convert a YYYYMMDD string to a DD/MM/YYYY string
+    return f"{string_to_convert[6:8]}/{string_to_convert[4:6]}/{string_to_convert[0:4]}"
+
+
+def date_format_from_string_to_db(string_to_convert):
+    # Convert a DD/MM/YYYY string to a YYYYMMDD string
+    return f"{string_to_convert[6:10]}{string_to_convert[3:5]}{string_to_convert[0:2]}"
+
+
+def initialise_global_variables_from_diaries_functions():
+    global open_diary_var
+    global db_connection
+    global cursor
+    global global_pass
+    global open_entry_bool
+    global open_entry_date
+
+    open_entry_bool = ""
+    db_connection = None
+    cursor = None
+    global_pass = ""
+    open_diary_var = False
+    open_entry_date = ""
+
+
+def create_message_window(root, message_text, message_type):
+    # If message type == 0, it's an error message
+    # If message type == 1, it's a success message
+    # If message type == 2, it's a caution message
+
+    message_window = tkinter.Toplevel()
+    if message_type == 0:
+        message_window.title("Error")
+    elif message_type == 1:
+        message_window.title("Success")
+    elif message_type == 2:
+        message_window.title("Caution")
+
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+
+    diary_window_width = 0
+
+    if message_type == 0:
+        diary_window_width = 400
+    elif message_type == 1:
+        diary_window_width = 200
+
+    diary_window_height = 100
+
+    center_x = int(screen_width / 2 - diary_window_width / 2)
+    center_y = int(screen_height / 2 - diary_window_height / 2)
+
+    # message_window.geometry(f'{diary_window_width}x{diary_window_height}+{center_x}+{center_y}')
+    message_window.geometry(f'+{center_x}+{center_y}')
+
+    message_window.attributes('-topmost', True)
+    message_window.focus_force()
+    message_window.update()
+    message_window.attributes('-topmost', False)
+
+    if message_type == 0:
+        message_window.iconbitmap('../assets/cross.ico')
+    elif message_type == 1:
+        message_window.iconbitmap('../assets/check.ico')
+    elif message_type == 2:
+        message_window.iconbitmap('../assets/caution.ico')
+
+    text_label = ttk.Label(message_window, text=message_text)
+    accept_button = ttk.Button(message_window, text="Accept", command=lambda: message_window.destroy())
+
+    message_window.columnconfigure(1, weight=1)
+
+    message_window.rowconfigure(1)
+    message_window.rowconfigure(2)
+
+    text_label.grid(column=1, row=1, padx=10, pady=5)
+    accept_button.grid(column=1, row=2, padx=10, pady=5)
+
+
+def open_diary_menu():
+    print("\nWhat do you want to do?")
+    print("1) Read entry")
+    print("2) Add entry")
+    print("3) Close this diary")
+
+    return int(input("Choose your option: "))
+
+
 def encrypt_text(text):
+    # This is a very simple form of cyphering
     aux_text = list(text) # We do this because strings are immutable in Python: https://bobbyhadz.com/blog/python-typeerror-str-object-does-not-support-item-assignment
     lowercase_string = "abcdefghijklmnopqrstuvwxyz"
     uppercase_string = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -162,58 +287,75 @@ def add_entry(db_connection, cursor):
     db_connection.commit()
 
 
-def get_available_diaries():
-    if not does_diaries_folder_exist():
-        print_error_missing_diaries_folder()
+def ask_for_password_window(root):
+    afpw = tkinter.Toplevel()
+    afpw.title("Introduce the password for this diary")
+
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+
+    diary_window_width = 400
+    diary_window_height = 200
+
+    center_x = int(screen_width / 2 - diary_window_width / 2)
+    center_y = int(screen_height / 2 - diary_window_height / 2)
+
+    afpw.geometry(f'+{center_x}+{center_y}')
+
+    afpw.attributes('-topmost', True)
+    afpw.focus_force()
+    afpw.update()
+    afpw.attributes('-topmost', False)
+
+    afpw.iconbitmap('../assets/diary.ico')
+
+    password_label = ttk.Label(afpw, text="Introduce the password for this diary")
+
+    password = tkinter.StringVar()
+    password_box = ttk.Entry(afpw, textvariable=password, show="*")
+    open_diary_button = ttk.Button(afpw, text="Open diary", command=lambda: set_global_pass(password_box, afpw))
+
+    password_box.focus()
+
+    afpw.columnconfigure(1, weight=1)
+
+    afpw.rowconfigure(1)
+    afpw.rowconfigure(2)
+    afpw.rowconfigure(3)
+
+    password_label.grid(column=1, row=1, sticky="W", padx=5)
+    password_box.grid(column=1, row=2, sticky="EW", padx=5)
+    open_diary_button.grid(column=1, row=3, sticky="S", pady=5)
+
+    return afpw
+
+
+def open_diary(root):
+    if len(open_diary_var) == 0:
+        error_text = "ERROR: No diary has been selected"
+        create_message_window(root, error_text, 0)
     else:
-        present_files = os.listdir(get_diaries_folder_path())
-
-        present_diaries = []
-
-        for file in present_files:
-            if file.find(get_diaries_extension()) != -1:
-                present_diaries.append(file.replace(get_diaries_extension(), ""))
-
-        return present_diaries
-
-
-def list_available_diaries():
-    diaries = get_available_diaries()
-
-    if len(diaries) == 0:
-        print("\nNo diaries available")
-    else:
-        print("\nThese are the available diaries:")
-        for i in range(len(diaries)):
-            string = f"{i+1}) {diaries[i]}"
-            print(string)
-
-
-def open_diary():
-    list_available_diaries()
-
-    diaries = get_available_diaries()
-
-    if len(diaries) == 0:
-        print("Create a diary first!")
-    else:
-        chosen_option = int(input("Which diary you want to open? Select its number: "))
-
-        while chosen_option not in range(1, len(diaries)+1):
-            chosen_option = int(input("Wrong option! Select another diary: "))
-
-        diary_path = f"{get_diaries_folder_path()}/{diaries[chosen_option-1]}{get_diaries_extension()}"
-
-        db_connection = sqlite3.connect(diary_path)
+        global db_connection
+        global cursor
+        db_connection = sqlite3.connect(open_diary_var)
         cursor = db_connection.cursor()
+
+        aux = ask_for_password_window(root)
+        aux.wait_window()
 
         diary_password = cursor.execute("SELECT diary_password FROM diary_data").fetchall()
 
-        password = input("Please introduce the password of this diary: ")
+        temp_pass = global_pass
 
-        while not bcrypt.checkpw(base64.b64encode(password.encode('ascii')), diary_password[0][0]):
-            password = input("Wrong password, please introduce the password of this diary again: ")
+        if not bcrypt.checkpw(base64.b64encode(temp_pass.encode('ascii')), diary_password[0][0]):
+            error_text = f"ERROR: Wrong password, open the diary again"
+            create_message_window(root, error_text, 0)
+            set_open_diary("")
+            cursor.close()
+            db_connection.close()
 
+
+        '''
         chosen_option = 0
 
         while chosen_option != 3:
@@ -228,86 +370,37 @@ def open_diary():
                 db_connection.close()
             else:
                 print("Wrong option")
+'''
 
 
-def create_message_window(base_window, error_text, message_type):
-    # If message type == 0, it's an error message
-    # If message type == 1, it's a success message
-
-    message_window = tkinter.Toplevel()
-    if message_type == 0:
-        message_window.title("Error")
-    elif message_type == 1:
-        message_window.title("Success")
-
-    screen_width = base_window.winfo_screenwidth()
-    screen_height = base_window.winfo_screenheight()
-
-    diary_window_width = 0
-
-    if message_type == 0:
-        diary_window_width = 400
-    elif message_type == 1:
-        diary_window_width = 200
-
-    diary_window_height = 100
-
-    center_x = int(screen_width / 2 - diary_window_width / 2)
-    center_y = int(screen_height / 2 - diary_window_height / 2)
-
-    # message_window.geometry(f'{diary_window_width}x{diary_window_height}+{center_x}+{center_y}')
-    message_window.geometry(f'+{center_x}+{center_y}')
-
-    message_window.attributes('-topmost', True)
-    message_window.focus_force()
-    message_window.update()
-    message_window.attributes('-topmost', False)
-
-    if message_type == 0:
-        message_window.iconbitmap('../assets/cross.ico')
-    elif message_type == 1:
-        message_window.iconbitmap('../assets/check.ico')
-
-    text_label = ttk.Label(message_window, text=error_text)
-    accept_button = ttk.Button(message_window, text="Accept", command=lambda: message_window.destroy())
-
-    message_window.columnconfigure(1, weight=1)
-
-    message_window.rowconfigure(1)
-    message_window.rowconfigure(2)
-
-    text_label.grid(column=1, row=1, padx=10, pady=5)
-    accept_button.grid(column=1, row=2, padx=10, pady=5)
-
-
-def create_diary(base_window, diary_name, diary_description, diary_password):
+def create_diary(root, diary_name, diary_description, diary_password):
     diary_path = f"{get_diaries_folder_path()}/{diary_name}{get_diaries_extension()}"
 
     can_create_diary = True
     diary_already_exists = False
 
     if os.path.isfile(diary_path):
-        error_text = "A diary with this name already exist, pick a new name."
-        create_message_window(base_window, error_text, 0)
+        error_text = "ERROR: A diary with this name already exist, pick a new name."
+        create_message_window(root, error_text, 0)
         can_create_diary = False
         diary_already_exists = True
 
     if not is_diary_name_valid(diary_name):
-        error_text = f"The following characters are not allowed: {get_non_valid_characters()}, try again."
-        create_message_window(base_window, error_text, 0)
+        error_text = f"ERROR: The following characters are not allowed: {get_non_valid_characters()}, try again."
+        create_message_window(root, error_text, 0)
         can_create_diary = False
 
     if len(diary_password) == 0 and not diary_already_exists:
-        error_text = f"The password can't be empty"
-        create_message_window(base_window, error_text, 0)
+        error_text = f"ERROR: The password can't be empty"
+        create_message_window(root, error_text, 0)
         can_create_diary = False
 
     encoded_password = base64.b64encode(diary_password.encode('ascii'))
 
     if (len(encoded_password) * 3) / 4 > 72:
         # Reason: https://stackoverflow.com/a/6793638
-        error_text = f"The password is too long"
-        create_message_window(base_window, error_text, 0)
+        error_text = f"ERROR: The password is too long"
+        create_message_window(root, error_text, 0)
         can_create_diary = False
 
     if can_create_diary:
@@ -333,4 +426,4 @@ def create_diary(base_window, diary_name, diary_description, diary_password):
         db_connection.commit()
         db_connection.close()
 
-        create_message_window(base_window, "Diary created successfully!", 1)
+        create_message_window(root, "Diary created successfully!", 1)
