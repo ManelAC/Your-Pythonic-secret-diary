@@ -132,8 +132,8 @@ def initialise_global_variables_from_diaries_functions():
     global open_entry_date
 
     open_entry_bool = ""
-    db_connection = None
-    cursor = None
+    db_connection = ""
+    cursor = ""
     global_pass = ""
     open_diary_var = False
     open_entry_date = ""
@@ -508,7 +508,8 @@ def create_diary(diary_name, diary_description, diary_password):
 
 
 def close_diary():
-    db_connection.commit()
-    db_connection.close()
+    if db_connection != "":
+        db_connection.commit()
+        db_connection.close()
 
     initialise_global_variables_from_diaries_functions()  # We reset the variables to their initial state

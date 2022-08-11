@@ -197,6 +197,63 @@ def close_diary_window():
 
     yes_button.grid(column=1, row=3, sticky="N", padx=5)
     no_button.grid(column=2, row=3, sticky="N", padx=5)
+
+
+def close_program_aux(cpw):
+    list_of_entries.initialize(value="")
+    entries_list.configure(listvariable=list_of_entries)
+    open_entry_button.configure(state="disabled")
+    save_button.configure(state="disabled")
+    text_label.configure(text="")
+    text_field.delete("1.0", tkinter.END)
+
+    close_diary()
+    cpw.destroy()
+
+    root.destroy()
+
+
+def close_program_window():
+    cpw = tkinter.Toplevel()
+    cpw.title("Close program")
+
+    diary_window_width = 400
+    diary_window_height = 200
+
+    center_x = int(get_screen_width_var() / 2 - diary_window_width / 2)
+    center_y = int(get_screen_height_var() / 2 - diary_window_height / 2)
+
+    # cdw.geometry(f'{diary_window_width}x{diary_window_height}+{center_x}+{center_y}')
+    cpw.geometry(f'+{center_x}+{center_y}')
+
+    cpw.attributes('-topmost', True)
+    cpw.focus_force()
+    cpw.update()
+    cpw.attributes('-topmost', False)
+
+    cpw.iconbitmap('../assets/diary.ico')
+
+    aux_text1 = f"Are you sure you want to close the program?"
+    aux_text2 = f"You will lose any change you haven't saved."
+
+    text_label1 = ttk.Label(cpw, text=aux_text1)
+    text_label2 = ttk.Label(cpw, text=aux_text2)
+
+    yes_button = ttk.Button(cpw, text="Yes", command=lambda: close_program_aux(cpw))
+    no_button = ttk.Button(cpw, text="No", command=lambda: cpw.destroy())
+
+    cpw.columnconfigure(1)
+    cpw.columnconfigure(2)
+    cpw.columnconfigure(3)
+
+    cpw.rowconfigure(1)
+    cpw.rowconfigure(2)
+
+    text_label1.grid(column=1, row=1, sticky="N", padx=5, columnspan=2)
+    text_label2.grid(column=1, row=2, sticky="N", padx=5, columnspan=2)
+
+    yes_button.grid(column=1, row=3, sticky="N", padx=5)
+    no_button.grid(column=2, row=3, sticky="N", padx=5)
     
 
 def open_entry_function():
@@ -254,7 +311,7 @@ def main_gui():
     diaries_menu.add_command(label='Open diary', command=open_diary_window)
     diaries_menu.add_command(label='Close diary', command=close_diary_window)
     diaries_menu.add_separator()
-    diaries_menu.add_command(label='Exit program', command=root.destroy)
+    diaries_menu.add_command(label='Exit program', command=close_program_window)
 
     menubar.add_cascade(label="Diaries", menu=diaries_menu)
     help_menu = Menu(menubar, tearoff=0)
