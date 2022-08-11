@@ -7,8 +7,9 @@ from tkinter.scrolledtext import ScrolledText
 root = tkinter.Tk()
 list_of_entries = tkinter.StringVar(value="")
 entries_list = tkinter.Listbox(root, listvariable=list_of_entries, selectmode="browse")
-open_entry_button = ttk.Button(root, text="Open entry", command=lambda: open_entry_function(), state="disabled")
+open_entry_button = ttk.Button(root, text="Open selected entry", command=lambda: open_entry_function(), state="disabled")
 text_label = ttk.Label(root, text="")
+delete_entry_button = ttk.Button(root, text="Delete this entry", command=lambda: delete_active_entry_window(), state="disabled")
 text_field = ScrolledText()
 save_button = ttk.Button(root, text="Save entry", command=lambda: update_entry(text_field.get("1.0", tkinter.END)), state="disabled")
 
@@ -19,8 +20,8 @@ def new_diary_window():
     ndw = tkinter.Toplevel()
     ndw.title("Create a new diary")
 
-    diary_window_width = int(get_app_main_window_width()*0.75)
-    diary_window_height = int(get_app_main_window_height()/3.9)
+    diary_window_width = int(get_app_main_window_width() * 0.75)
+    diary_window_height = int(get_app_main_window_height() / 3.9)
 
     center_x = int(get_screen_width_var() / 2 - diary_window_width / 2)
     center_y = int(get_screen_width_var() / 2 - diary_window_height / 2)
@@ -82,7 +83,6 @@ def open_diary_window():
             entries_list.configure(listvariable=list_of_entries)
             entries_list.select_set(0)
             open_entry_button.configure(state="!disabled")
-            save_button.configure(state="!disabled")
             text_label.configure(text="")
             text_field.delete("1.0", tkinter.END)
 
@@ -144,11 +144,68 @@ def already_active_entry_window(new_entry, old_entry):
     return aaew
 
 
+def delete_active_entry_aux(deaw):
+    delete_entry()
+
+    list_of_entries.initialize(value=get_entries_from_open_diary())
+    entries_list.configure(listvariable=list_of_entries)
+    save_button.configure(state="disabled")
+    delete_entry_button.configure(state="disabled")
+    text_label.configure(text="")
+    text_field.delete("1.0", tkinter.END)
+
+    deaw.destroy()
+
+
+def delete_active_entry_window():
+    deaw = tkinter.Toplevel()
+    deaw.title("Close diary")
+
+    diary_window_width = 400
+    diary_window_height = 200
+
+    center_x = int(get_screen_width_var() / 2 - diary_window_width / 2)
+    center_y = int(get_screen_height_var() / 2 - diary_window_height / 2)
+
+    # cdw.geometry(f'{diary_window_width}x{diary_window_height}+{center_x}+{center_y}')
+    deaw.geometry(f'+{center_x}+{center_y}')
+
+    deaw.attributes('-topmost', True)
+    deaw.focus_force()
+    deaw.update()
+    deaw.attributes('-topmost', False)
+
+    deaw.iconbitmap('../assets/diary.ico')
+
+    aux_text1 = f"Are you sure you want to delete this entry?"
+    aux_text2 = f"You will not be able to recover this entry after deleting it."
+
+    text_label1 = ttk.Label(deaw, text=aux_text1)
+    text_label2 = ttk.Label(deaw, text=aux_text2)
+
+    yes_button = ttk.Button(deaw, text="Yes", command=lambda: delete_active_entry_aux(deaw))
+    no_button = ttk.Button(deaw, text="No", command=lambda: deaw.destroy())
+
+    deaw.columnconfigure(1)
+    deaw.columnconfigure(2)
+    deaw.columnconfigure(3)
+
+    deaw.rowconfigure(1)
+    deaw.rowconfigure(2)
+
+    text_label1.grid(column=1, row=1, sticky="N", padx=5, columnspan=2)
+    text_label2.grid(column=1, row=2, sticky="N", padx=5, columnspan=2)
+
+    yes_button.grid(column=1, row=3, sticky="N", padx=5)
+    no_button.grid(column=2, row=3, sticky="N", padx=5)
+
+
 def close_diary_aux(cdw):
     list_of_entries.initialize(value="")
     entries_list.configure(listvariable=list_of_entries)
     open_entry_button.configure(state="disabled")
     save_button.configure(state="disabled")
+    delete_entry_button.configure(state="disabled")
     text_label.configure(text="")
     text_field.delete("1.0", tkinter.END)
 
@@ -204,6 +261,7 @@ def close_program_aux(cpw):
     entries_list.configure(listvariable=list_of_entries)
     open_entry_button.configure(state="disabled")
     save_button.configure(state="disabled")
+    delete_entry_button.configure(state="disabled")
     text_label.configure(text="")
     text_field.delete("1.0", tkinter.END)
 
@@ -254,7 +312,7 @@ def close_program_window():
 
     yes_button.grid(column=1, row=3, sticky="N", padx=5)
     no_button.grid(column=2, row=3, sticky="N", padx=5)
-    
+
 
 def open_entry_function():
     active_selection = entries_list.selection_get()
@@ -267,6 +325,8 @@ def open_entry_function():
         text_field.insert(tkinter.INSERT, get_text_from_active_entry())
         text_label_text = f"This is the entry for {active_selection} from diary {get_diary_name()}"
         text_label.configure(text=text_label_text)
+        save_button.configure(state="!disabled")
+        delete_entry_button.configure(state="!disabled")
     elif get_active_entry() != "":
         aux = already_active_entry_window(active_selection, date_format_from_db_to_string(get_active_entry()))
         aux.wait_window()
@@ -277,6 +337,8 @@ def open_entry_function():
             text_field.insert(tkinter.INSERT, get_text_from_active_entry())
             text_label_text = f"This is the entry for {active_selection} from diary {get_diary_name()}"
             text_label.configure(text=text_label_text)
+            save_button.configure(state="!disabled")
+            delete_entry_button.configure(state="!disabled")
 
 
 def main_gui():
@@ -285,14 +347,15 @@ def main_gui():
     # We create the basic GUI geometry
     # root = tkinter.Tk()
     root.title("Your Pythonic secret diary")
-    
+
     set_screen_width_var(root.winfo_screenwidth())
     set_screen_height_var(root.winfo_screenheight())
 
     center_x = int(get_screen_width_var() / 2 - get_app_main_window_width() / 2)
     center_y = int(get_screen_height_var() / 2 - get_app_main_window_height() / 2)
 
-    root.geometry(f'{get_app_main_window_width()}x{get_app_main_window_height()}+{center_x}+{center_y}')
+    # root.geometry(f'{get_app_main_window_width()}x{get_app_main_window_height()}+{center_x}+{center_y}')
+    root.geometry(f'+{center_x}+{center_y}')
 
     # Solution from here about how to make the GUI appear on top: https://stackoverflow.com/a/45064895
     root.attributes('-topmost', True)
@@ -333,12 +396,14 @@ def main_gui():
     root.rowconfigure(1)
     root.rowconfigure(2, weight=1)
     root.rowconfigure(3)
+    root.rowconfigure(4)
 
     entries_label.grid(column=1, row=1, padx=10, pady=5)
     entries_list.grid(column=1, row=2, padx=0, pady=0, sticky="NSEW")
     open_entry_button.grid(column=1, row=3, padx=10, pady=5)
     scrollbar.grid(column=2, row=2, sticky="NSEW")
-    text_label.grid(column=3, row=1, padx=10, pady=5)
+    text_label.grid(column=3, row=1, padx=10, pady=5, sticky="W")
+    delete_entry_button.grid(column=3, row=1, padx=10, pady=5, sticky="E")
     text_field.grid(column=3, row=2, sticky="NSEW", padx=5, pady=0)
     save_button.grid(column=3, row=3, padx=10, pady=5)
 

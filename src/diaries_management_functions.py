@@ -408,6 +408,15 @@ def add_entry(db_connection, cursor):
     db_connection.commit()
 
 
+def delete_entry():
+    entry_sql_delete = "DELETE FROM diary_entries WHERE entry_date = ?;"
+    cursor.execute(entry_sql_delete, (get_active_entry(),))
+    db_connection.commit()
+
+    global open_diary_var
+    open_diary_var = ""
+
+
 def open_diary():
     if len(open_diary_var) == 0:
         error_text = "ERROR: No diary has been selected"
@@ -431,24 +440,6 @@ def open_diary():
             set_open_diary("")
             cursor.close()
             db_connection.close()
-
-
-        '''
-        chosen_option = 0
-
-        while chosen_option != 3:
-            chosen_option = opened_diary_menu()
-
-            if chosen_option == 1:
-                read_entry(cursor)
-            elif chosen_option == 2:
-                add_entry(db_connection, cursor)
-            elif chosen_option == 3:
-                db_connection.commit()
-                db_connection.close()
-            else:
-                print("Wrong option")
-'''
 
 
 def create_diary(diary_name, diary_description, diary_password):
