@@ -4,6 +4,8 @@ import base64
 import bcrypt
 import tkinter
 from tkinter import ttk
+from datetime import datetime
+
 
 # Global variables
 global open_diary_var  # The path to the current open diary
@@ -41,6 +43,36 @@ def get_entries_from_open_diary():
     return list_aux
 
 
+def get_days_list():
+    list_aux = []
+
+    for i in range(1, 32):
+        list_aux.append(i)
+
+    return list_aux
+
+
+def get_months_list():
+    list_aux = []
+
+    for i in range(1, 13):
+        list_aux.append(i)
+
+    return list_aux
+
+
+def get_years_list():
+    list_aux = []
+
+    start_year = int(datetime.today().strftime("%Y")) - 10
+    end_year = int(datetime.today().strftime("%Y")) + 10
+
+    for i in range(start_year, end_year + 1):
+        list_aux.append(i)
+
+    return list_aux
+
+
 def get_diaries_folder_path():
     return "../diaries"
 
@@ -53,35 +85,23 @@ def get_non_valid_characters():
     return "<>:\"/\\|?*"
 
 
-def get_valid_date():
-    correct_date = False
+def is_date_valid(day, month, year):
+    # The following bit is from: https://stackoverflow.com/a/51981596
+    number_of_days_per_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0):
+        number_of_days_per_month[1] = 29
 
-    day, month, year = 0, 0, 0
-
-    while not correct_date:
-        day = int(input("Introduce the day in number format: "))
-        while day <= 0 or day >= 32:
-            day = int(input("Wrong day, introduce it again: "))
-
-        month = int(input("Introduce the month in number format: "))
-        while month <= 0 or month >= 13:
-            month = int(input("Wrong month, introduce it again: "))
-
-        year = int(input("Introduce the year in number format: "))
-        while year <= -1 or year >= 10000:
-            year = int(input("Wrong year, introduce it again: "))
-
-        # The following bit is from: https://stackoverflow.com/a/51981596
-        number_of_days_per_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-        if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0):
-            number_of_days_per_month[1] = 29
-
-        if day > number_of_days_per_month[month - 1]:
-            print("Wrong date, introduce it again!")
+    if day > number_of_days_per_month[month - 1]:
+        create_message_window("ERROR: The date is incorrect. Pick a different one.", 0)
+        return False
+    else:
+        aux_var = get_entries_from_open_diary()
+        aux_string = f"{day:02}/{month:02}/{year:04}"
+        if aux_string in aux_var:
+            create_message_window("ERROR: An entry for this date already exists. Pick a different one.", 0)
+            return False
         else:
-            correct_date = True
-
-    return f"{year:04}{month:02}{day:02}"
+            return True
 
 
 def set_active_entry(date):
@@ -332,15 +352,6 @@ def date_format_from_string_to_db(string_to_convert):
     return f"{string_to_convert[6:10]}{string_to_convert[3:5]}{string_to_convert[0:2]}"
 
 
-def open_diary_menu():
-    print("\nWhat do you want to do?")
-    print("1) Read entry")
-    print("2) Add entry")
-    print("3) Close this diary")
-
-    return int(input("Choose your option: "))
-
-
 def encrypt_text(text):
     # This is a very simple form of cyphering
     aux_text = list(text) # We do this because strings are immutable in Python: https://bobbyhadz.com/blog/python-typeerror-str-object-does-not-support-item-assignment
@@ -392,19 +403,12 @@ def update_entry(entry_text):
         db_connection.commit()
 
 
-def add_entry(db_connection, cursor):
-    print("Please, introduce the date for this entry")
-
-    entry_date = get_valid_date()
-
-    print("What do you want to write in the entry?")
-    entry_text = input()
-
-    encrypted_text = encrypt_text(entry_text)
-
+def add_entry(day, month, year):
     entry_sql_insert = "INSERT INTO diary_entries(entry_date, entry_text) VALUES (?, ?)"
 
-    cursor.execute(entry_sql_insert, (entry_date, encrypted_text))
+    entry_date = f"{year:04}{month:02}{day:02}"
+
+    cursor.execute(entry_sql_insert, (entry_date, ""))
     db_connection.commit()
 
 
@@ -413,8 +417,8 @@ def delete_entry():
     cursor.execute(entry_sql_delete, (get_active_entry(),))
     db_connection.commit()
 
-    global open_diary_var
-    open_diary_var = ""
+    global open_entry_date
+    open_entry_date = ""
 
 
 def open_diary():

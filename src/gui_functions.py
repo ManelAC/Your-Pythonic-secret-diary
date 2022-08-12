@@ -3,15 +3,17 @@ import tkinter
 from tkinter import ttk, Menu, filedialog
 from tkinter.scrolledtext import ScrolledText
 
+
 # Global variables
 root = tkinter.Tk()
 list_of_entries = tkinter.StringVar(value="")
 entries_list = tkinter.Listbox(root, listvariable=list_of_entries, selectmode="browse")
 open_entry_button = ttk.Button(root, text="Open selected entry", command=lambda: open_entry_function(), state="disabled")
-text_label = ttk.Label(root, text="")
+text_label = ttk.Label(root, text="Open a diary to edit it")
 delete_entry_button = ttk.Button(root, text="Delete this entry", command=lambda: delete_active_entry_window(), state="disabled")
 text_field = ScrolledText()
 save_button = ttk.Button(root, text="Save entry", command=lambda: update_entry(text_field.get("1.0", tkinter.END)), state="disabled")
+add_new_entry_button = ttk.Button(root, text="Add new entry", command=lambda: add_new_entry_window(), state="disabled")
 
 global already_active_entry_window_answer
 
@@ -83,7 +85,8 @@ def open_diary_window():
             entries_list.configure(listvariable=list_of_entries)
             entries_list.select_set(0)
             open_entry_button.configure(state="!disabled")
-            text_label.configure(text="")
+            add_new_entry_button.configure(state="!disabled")
+            text_label.configure(text="Open an entry to edit it")
             text_field.delete("1.0", tkinter.END)
 
         else:
@@ -144,6 +147,61 @@ def already_active_entry_window(new_entry, old_entry):
     return aaew
 
 
+def add_new_entry_window_aux(anew, day, month, year):
+    if is_date_valid(day, month, year):
+        add_entry(day, month, year)
+        global list_of_entries
+        list_of_entries = tkinter.StringVar(value=get_entries_from_open_diary())
+        entries_list.configure(listvariable=list_of_entries)
+        anew.destroy()
+
+
+def add_new_entry_window():
+    anew = tkinter.Toplevel()
+    anew.title("Add a new entry")
+
+    diary_window_width = int(get_app_main_window_width() * 0.75)
+    diary_window_height = int(get_app_main_window_height() / 3.9)
+
+    center_x = int(get_screen_width_var() / 2 - diary_window_width / 2)
+    center_y = int(get_screen_width_var() / 2 - diary_window_height / 2)
+
+    # anew.geometry(f'{diary_window_width}x{diary_window_height}+{center_x}+{center_y}')
+    anew.geometry(f'+{center_x}+{center_y}')
+
+    anew.attributes('-topmost', True)
+    anew.focus_force()
+    anew.update()
+    anew.attributes('-topmost', False)
+
+    anew.iconbitmap('../assets/diary.ico')
+
+    days_combobox = ttk.Combobox(anew, values=get_days_list(), state="readonly")
+    months_combobox = ttk.Combobox(anew, values=get_months_list(), state="readonly")
+    years_combobox = ttk.Combobox(anew, values=get_years_list(), state="readonly")
+
+    days_combobox.current(0)
+    months_combobox.current(0)
+    years_combobox.current(0)
+
+    anew_text_label = ttk.Label(anew, text="Pick a date")
+    create_diary_button = ttk.Button(anew, text="Add new entry", command=lambda: add_new_entry_window_aux(anew, int(days_combobox.get()), int(months_combobox.get()), int(years_combobox.get())))
+
+    anew.columnconfigure(1)
+    anew.columnconfigure(2, weight=1)
+    anew.columnconfigure(3)
+
+    anew.rowconfigure(1)
+    anew.rowconfigure(2)
+    anew.rowconfigure(3)
+
+    anew_text_label.grid(column=1, row=1, sticky="N", padx=5, columnspan=3)
+    days_combobox.grid(column=1, row=2, sticky="EW", padx=5)
+    months_combobox.grid(column=2, row=2, sticky="EW", padx=5)
+    years_combobox.grid(column=3, row=2, sticky="EW", padx=5)
+    create_diary_button.grid(column=1, row=3, sticky="N", pady=5, columnspan=3)
+
+
 def delete_active_entry_aux(deaw):
     delete_entry()
 
@@ -151,7 +209,7 @@ def delete_active_entry_aux(deaw):
     entries_list.configure(listvariable=list_of_entries)
     save_button.configure(state="disabled")
     delete_entry_button.configure(state="disabled")
-    text_label.configure(text="")
+    text_label.configure(text="Open an entry to edit it")
     text_field.delete("1.0", tkinter.END)
 
     deaw.destroy()
@@ -177,7 +235,7 @@ def delete_active_entry_window():
 
     deaw.iconbitmap('../assets/diary.ico')
 
-    aux_text1 = f"Are you sure you want to delete this entry?"
+    aux_text1 = f"Are you sure you want to delete the entry for {date_format_from_db_to_string(get_active_entry())}?"
     aux_text2 = f"You will not be able to recover this entry after deleting it."
 
     text_label1 = ttk.Label(deaw, text=aux_text1)
@@ -204,9 +262,10 @@ def close_diary_aux(cdw):
     list_of_entries.initialize(value="")
     entries_list.configure(listvariable=list_of_entries)
     open_entry_button.configure(state="disabled")
+    add_new_entry_button.configure(state="disabled")
     save_button.configure(state="disabled")
     delete_entry_button.configure(state="disabled")
-    text_label.configure(text="")
+    text_label.configure(text="Open a diary to edit it")
     text_field.delete("1.0", tkinter.END)
 
     close_diary()
@@ -262,7 +321,7 @@ def close_program_aux(cpw):
     open_entry_button.configure(state="disabled")
     save_button.configure(state="disabled")
     delete_entry_button.configure(state="disabled")
-    text_label.configure(text="")
+    text_label.configure(text="Open an entry to edit it")
     text_field.delete("1.0", tkinter.END)
 
     close_diary()
@@ -375,14 +434,14 @@ def main_gui():
     diaries_menu.add_command(label='Close diary', command=close_diary_window)
     diaries_menu.add_separator()
     diaries_menu.add_command(label='Exit program', command=close_program_window)
-
     menubar.add_cascade(label="Diaries", menu=diaries_menu)
-    help_menu = Menu(menubar, tearoff=0)
 
+    '''
+    help_menu = Menu(menubar, tearoff=0)
     help_menu.add_command(label='Welcome')
     help_menu.add_command(label='About...')
-
     menubar.add_cascade(label="Help", menu=help_menu)
+    '''
 
     # We populate the GUI with the elements we need
     entries_label = ttk.Label(root, text="Available entries")
@@ -404,8 +463,9 @@ def main_gui():
     scrollbar.grid(column=2, row=2, sticky="NSEW")
     text_label.grid(column=3, row=1, padx=10, pady=5, sticky="W")
     delete_entry_button.grid(column=3, row=1, padx=10, pady=5, sticky="E")
-    text_field.grid(column=3, row=2, sticky="NSEW", padx=5, pady=0)
-    save_button.grid(column=3, row=3, padx=10, pady=5)
+    text_field.grid(column=3, row=2, sticky="NSEW", padx=5, pady=0, rowspan=2)
+    save_button.grid(column=3, row=4, padx=10, pady=5)
+    add_new_entry_button.grid(column=1, row=4, padx=0, pady=5)
 
     initialise_global_variables_from_diaries_functions()
 
