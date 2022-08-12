@@ -1,1 +1,9 @@
-print("This is going to be a Python-based secret diary application!")
+from gui_functions import *
+
+
+def main():
+    main_gui()
+
+
+if __name__ == "__main__":
+    main()
