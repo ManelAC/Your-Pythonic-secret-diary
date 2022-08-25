@@ -26,7 +26,7 @@ def new_diary_window():
     diary_window_height = int(get_app_main_window_height() / 3.9)
 
     center_x = int(get_screen_width_var() / 2 - diary_window_width / 2)
-    center_y = int(get_screen_width_var() / 2 - diary_window_height / 2)
+    center_y = int(get_screen_height_var() / 2 - diary_window_height / 2)
 
     ndw.geometry(f'{diary_window_width}x{diary_window_height}+{center_x}+{center_y}')
 
@@ -71,7 +71,7 @@ def new_diary_window():
 
 
 def open_diary_window():
-    set_open_diary(filedialog.askopenfilename(defaultextension=get_diaries_extension(), initialdir=get_diaries_folder_path()))
+    set_open_diary(filedialog.askopenfilename(defaultextension=get_diaries_extension(), initialdir=get_diaries_folder_path(), filetypes=(("Secret diary", f"{get_diaries_extension()}"),)))
     open_diary()
 
     if get_open_diary() == "":
@@ -273,46 +273,49 @@ def close_diary_aux(cdw):
 
 
 def close_diary_window():
-    cdw = tkinter.Toplevel()
-    cdw.title("Close diary")
+    if get_open_diary() == "":
+        create_message_window("No diary is open.", 0)
+    else:
+        cdw = tkinter.Toplevel()
+        cdw.title("Close diary")
 
-    diary_window_width = 400
-    diary_window_height = 200
+        diary_window_width = 400
+        diary_window_height = 200
 
-    center_x = int(get_screen_width_var() / 2 - diary_window_width / 2)
-    center_y = int(get_screen_height_var() / 2 - diary_window_height / 2)
+        center_x = int(get_screen_width_var() / 2 - diary_window_width / 2)
+        center_y = int(get_screen_height_var() / 2 - diary_window_height / 2)
 
-    # cdw.geometry(f'{diary_window_width}x{diary_window_height}+{center_x}+{center_y}')
-    cdw.geometry(f'+{center_x}+{center_y}')
+        # cdw.geometry(f'{diary_window_width}x{diary_window_height}+{center_x}+{center_y}')
+        cdw.geometry(f'+{center_x}+{center_y}')
 
-    cdw.attributes('-topmost', True)
-    cdw.focus_force()
-    cdw.update()
-    cdw.attributes('-topmost', False)
+        cdw.attributes('-topmost', True)
+        cdw.focus_force()
+        cdw.update()
+        cdw.attributes('-topmost', False)
 
-    cdw.iconbitmap('../assets/diary.ico')
+        cdw.iconbitmap('../assets/diary.ico')
 
-    aux_text1 = f"Are you sure you want to close this diary?"
-    aux_text2 = f"You will lose any change you haven't saved."
+        aux_text1 = f"Are you sure you want to close this diary?"
+        aux_text2 = f"You will lose any change you haven't saved."
 
-    text_label1 = ttk.Label(cdw, text=aux_text1)
-    text_label2 = ttk.Label(cdw, text=aux_text2)
+        text_label1 = ttk.Label(cdw, text=aux_text1)
+        text_label2 = ttk.Label(cdw, text=aux_text2)
 
-    yes_button = ttk.Button(cdw, text="Yes", command=lambda: close_diary_aux(cdw))
-    no_button = ttk.Button(cdw, text="No", command=lambda: cdw.destroy())
+        yes_button = ttk.Button(cdw, text="Yes", command=lambda: close_diary_aux(cdw))
+        no_button = ttk.Button(cdw, text="No", command=lambda: cdw.destroy())
 
-    cdw.columnconfigure(1)
-    cdw.columnconfigure(2)
-    cdw.columnconfigure(3)
+        cdw.columnconfigure(1)
+        cdw.columnconfigure(2)
+        cdw.columnconfigure(3)
 
-    cdw.rowconfigure(1)
-    cdw.rowconfigure(2)
+        cdw.rowconfigure(1)
+        cdw.rowconfigure(2)
 
-    text_label1.grid(column=1, row=1, sticky="N", padx=5, columnspan=2)
-    text_label2.grid(column=1, row=2, sticky="N", padx=5, columnspan=2)
+        text_label1.grid(column=1, row=1, sticky="N", padx=5, columnspan=2)
+        text_label2.grid(column=1, row=2, sticky="N", padx=5, columnspan=2)
 
-    yes_button.grid(column=1, row=3, sticky="N", padx=5)
-    no_button.grid(column=2, row=3, sticky="N", padx=5)
+        yes_button.grid(column=1, row=3, sticky="N", padx=5)
+        no_button.grid(column=2, row=3, sticky="N", padx=5)
 
 
 def close_program_aux(cpw):
