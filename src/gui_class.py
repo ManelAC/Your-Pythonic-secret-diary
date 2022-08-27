@@ -1,8 +1,8 @@
-import sys
 import tkinter
-from tkinter import ttk, Menu, filedialog
+from tkinter import ttk, Menu, filedialog, font
 from tkinter.scrolledtext import ScrolledText
 from datetime import datetime
+import webbrowser
 
 
 class GUI:
@@ -54,12 +54,10 @@ class GUI:
         diaries_menu.add_command(label='Exit program', command=self.close_program_window)
         menubar.add_cascade(label="Diaries", menu=diaries_menu)
 
-        """
         help_menu = Menu(menubar, tearoff=0)
-        help_menu.add_command(label='Welcome')
-        help_menu.add_command(label='About...')
+        help_menu.add_command(label='Welcome', command=self.welcome_window)
+        help_menu.add_command(label='About', command=self.about_window)
         menubar.add_cascade(label="Help", menu=help_menu)
-        """
         
         # We populate the GUI with the elements we need
         self.entries_text_label = ttk.Label(self.root, text="Available entries")
@@ -78,7 +76,7 @@ class GUI:
         self.add_new_entry_button = ttk.Button(self.root, text="Add new entry", command=lambda: self.add_new_entry_window(), state="disabled")
         self.add_new_entry_button.grid(column=1, row=4, padx=0, pady=5)
 
-        self.main_window_text_label = ttk.Label(self.root, text="Open a diary to edit it")
+        self.main_window_text_label = ttk.Label(self.root, text="Open a diary to edit it.")
         self.main_window_text_label.grid(column=3, row=1, padx=10, pady=5, sticky="W")
 
         self.delete_entry_button = ttk.Button(self.root, text="Delete this entry", command=lambda: self.delete_active_entry_window(), state="disabled")
@@ -112,7 +110,7 @@ class GUI:
         list_aux = []
 
         for i in range(1, 32):
-            list_aux.append(i)
+            list_aux.append(f"{i}")
 
         return list_aux
 
@@ -121,7 +119,7 @@ class GUI:
         list_aux = []
 
         for i in range(1, 13):
-            list_aux.append(i)
+            list_aux.append(f"{i}")
 
         return list_aux
 
@@ -129,11 +127,11 @@ class GUI:
     def get_years_list():
         list_aux = []
 
-        start_year = int(datetime.today().strftime("%Y")) - 10
-        end_year = int(datetime.today().strftime("%Y")) + 10
+        start_year = int(datetime.today().strftime("%Y")) - 5
+        end_year = int(datetime.today().strftime("%Y")) + 5
 
         for i in range(start_year, end_year + 1):
-            list_aux.append(i)
+            list_aux.append(f"{i}")
 
         return list_aux
 
@@ -144,24 +142,109 @@ class GUI:
             number_of_days_per_month[1] = 29
 
         if day > number_of_days_per_month[month - 1]:
-            self.create_message_window("ERROR: The date is incorrect. Pick a different one.", 0)
+            self.create_message_window("The date is incorrect. Pick a different one.", 0)
             return False
         else:
             aux_var = self.diary.get_entries_from_open_diary()
             aux_string = f"{day:02}/{month:02}/{year:04}"
             if aux_string in aux_var:
-                self.create_message_window("ERROR: An entry for this date already exists. Pick a different one.", 0)
+                self.create_message_window("An entry for this date already exists. Pick a different one.", 0)
                 return False
             else:
                 return True
 
     # Windows creation functions
-    def new_diary_window_aux(self, diary, name, description, password):
+    def welcome_window(self):
+        ww = tkinter.Toplevel()
+        ww.title("Welcome")
+
+        welcome_window_width = 600
+        welcome_window_height = 100
+
+        center_x = int(self.screen_width / 2 - welcome_window_width / 2)
+        center_y = int(self.screen_height / 2 - welcome_window_height / 2)
+
+        ww.geometry(f'+{center_x}+{center_y}')
+
+        ww.attributes('-topmost', True)
+        ww.focus_force()
+        ww.update()
+        ww.attributes('-topmost', False)
+
+        ww.iconbitmap('../assets/diary.ico')
+
+        text1_label = ttk.Label(ww, text="Welcome to Your Pythonic secret diary!", font="bold")
+        text2_label = ttk.Label(ww, text="This is a Python-based secret diary management system in which you can keep your secrets in as many diaries as you want.")
+        text3_label = ttk.Label(ww, text="To start with the program, just go to the Diaries menu, create your first diary and open it.")
+        ok_button = ttk.Button(ww, text="Ok", command=lambda: ww.destroy())
+
+        ww.columnconfigure(1, weight=1)
+
+        ww.rowconfigure(1)
+        ww.rowconfigure(2)
+        ww.rowconfigure(3)
+        ww.rowconfigure(4)
+
+        text1_label.grid(column=1, row=1, pady=5)
+        text2_label.grid(column=1, row=2)
+        text3_label.grid(column=1, row=3)
+        ok_button.grid(column=1, row=4, pady=5)
+
+    @staticmethod
+    def open_github_in_browser(url):
+        webbrowser.open_new(url)
+
+    def about_window(self):
+        aw = tkinter.Toplevel()
+        aw.title("About")
+
+        welcome_window_width = 200
+        welcome_window_height = 100
+
+        center_x = int(self.screen_width / 2 - welcome_window_width / 2)
+        center_y = int(self.screen_height / 2 - welcome_window_height / 2)
+
+        aw.geometry(f'+{center_x}+{center_y}')
+
+        aw.attributes('-topmost', True)
+        aw.focus_force()
+        aw.update()
+        aw.attributes('-topmost', False)
+
+        aw.iconbitmap('../assets/diary.ico')
+
+        text1_label = ttk.Label(aw, text="Your Pythonic secret diary 1.0", font="bold")
+        text2_label = ttk.Label(aw, text="My name is Manel and you can find more about me in GitHub at:")
+
+        # How to change the cursor while hovering the text found here: https://stackoverflow.com/questions/45184462/how-do-i-change-my-cursor-to-a-hand-only-when-it-is-hovering-over-a-label
+        text3_label = ttk.Label(aw, text="https://github.com/ManelAC", font="bold", foreground="blue", cursor="hand2")
+
+        # How to use underline text in Python 3, extracted from here: https://stackoverflow.com/a/44890599
+        my_font = font.Font(text3_label, text3_label.cget("font"))
+        my_font.configure(underline=True)
+        text3_label.configure(font=my_font)
+        text3_label.bind("<Button-1>", lambda e: self.open_github_in_browser("https://github.com/ManelAC"))
+        ok_button = ttk.Button(aw, text="Ok", command=lambda: aw.destroy())
+
+        aw.columnconfigure(1, weight=1)
+
+        aw.rowconfigure(1)
+        aw.rowconfigure(2)
+        aw.rowconfigure(3)
+        aw.rowconfigure(4)
+
+        text1_label.grid(column=1, row=1, pady=5)
+        text2_label.grid(column=1, row=2, padx=5)
+        text3_label.grid(column=1, row=3)
+        ok_button.grid(column=1, row=4, pady=5)
+    
+    def new_diary_window_aux(self, name, description, password, ndw):
         message, result = self.diary.create_diary(name, description, password)
 
         if not result:
             self.create_message_window(message, 0)
         else:
+            ndw.destroy()
             self.create_message_window(message, 1)
 
     def new_diary_window(self):
@@ -193,7 +276,7 @@ class GUI:
         description_box = ttk.Entry(ndw, textvariable=description)
         password = tkinter.StringVar()
         password_box = ttk.Entry(ndw, textvariable=password, show="*")
-        create_diary_button = ttk.Button(ndw, text="Create diary", command=lambda: self.new_diary_window_aux(self.diary, name_box.get(), description_box.get(), password_box.get()))
+        create_diary_button = ttk.Button(ndw, text="Create diary", command=lambda: self.new_diary_window_aux(name_box.get(), description_box.get(), password_box.get(), ndw))
 
         name_box.focus()
 
@@ -228,11 +311,11 @@ class GUI:
             self.entries_list_box.configure(listvariable=self.entries_list_content)
             self.entries_list_box.select_set(0)
             self.add_new_entry_button.configure(state="!disabled")
-            self.main_window_text_label.configure(text="Open an entry to edit it")
+            self.main_window_text_label.configure(text="Open an entry to edit it.")
             self.text_field.delete("1.0", tkinter.END)
 
             if len(aux_var) == 0:
-                self.create_message_window("The diary has been opened but it has no entries", 1)
+                self.create_message_window("The diary has been opened but it has no entries.", 1)
             else:
                 self.open_entry_button.configure(state="!disabled")
 
@@ -283,7 +366,7 @@ class GUI:
         self.add_new_entry_button.configure(state="disabled")
         self.save_button.configure(state="disabled")
         self.delete_entry_button.configure(state="disabled")
-        self.main_window_text_label.configure(text="Open a diary to edit it")
+        self.main_window_text_label.configure(text="Open a diary to edit it.")
         self.entries_list_content.initialize(value="")
         self.entries_list_box.configure(listvariable=self.entries_list_content)
 
@@ -301,7 +384,7 @@ class GUI:
     def open_diary_window(self):
         if self.diary.get_open_diary_path() != "":
             opw = tkinter.Toplevel()
-            opw.title("Choose an action")
+            opw.title("Open diary")
 
             diary_window_width = 400
             diary_window_height = 200
@@ -341,8 +424,8 @@ class GUI:
             text_label1.grid(column=1, row=1, sticky="N", padx=5, columnspan=2)
             text_label2.grid(column=1, row=2, sticky="N", padx=5, columnspan=2)
             text_label3.grid(column=1, row=3, sticky="N", padx=5, columnspan=2)
-            yes_button.grid(column=1, row=4, sticky="N", padx=5)
-            no_button.grid(column=2, row=4, sticky="N", padx=5)
+            yes_button.grid(column=1, row=4, sticky="N", padx=5, pady=5)
+            no_button.grid(column=2, row=4, sticky="N", padx=5, pady=5)
         else:
             opw = tkinter.Toplevel()
             self.open_diary_window_aux(opw)
@@ -351,7 +434,7 @@ class GUI:
         self.diary.set_active_entry(self.diary.gui_date_to_db_date(new_entry))
         self.text_field.delete("1.0", tkinter.END)
         self.text_field.insert(tkinter.INSERT, self.diary.get_text_from_active_entry())
-        text_label_text = f"This is the entry for {self.diary.db_date_to_gui_date(self.diary.get_active_entry())} from diary {self.diary.get_diary_name()}"
+        text_label_text = f"This is the entry for {self.diary.db_date_to_gui_date(self.diary.get_active_entry())} from diary {self.diary.get_diary_name()}."
         self.main_window_text_label.configure(text=text_label_text)
         self.save_button.configure(state="!disabled")
         self.delete_entry_button.configure(state="!disabled")
@@ -359,7 +442,7 @@ class GUI:
 
     def already_active_entry_window(self, new_entry, old_entry):
         aaew = tkinter.Toplevel()
-        aaew.title("Choose an action")
+        aaew.title("Open entry")
 
         diary_window_width = 400
         diary_window_height = 200
@@ -399,14 +482,14 @@ class GUI:
         text_label1.grid(column=1, row=1, sticky="N", padx=5, columnspan=2)
         text_label2.grid(column=1, row=2, sticky="N", padx=5, columnspan=2)
         text_label3.grid(column=1, row=3, sticky="N", padx=5, columnspan=2)
-        yes_button.grid(column=1, row=4, sticky="N", padx=5)
-        no_button.grid(column=2, row=4, sticky="N", padx=5)
+        yes_button.grid(column=1, row=4, sticky="N", padx=5, pady=5)
+        no_button.grid(column=2, row=4, sticky="N", padx=5, pady=5)
 
     def open_entry_function(self):
         active_selection = self.entries_list_box.selection_get()
 
         if active_selection == self.diary.db_date_to_gui_date(self.diary.get_active_entry()):
-            self.create_message_window("This entry is already open", 2)
+            self.create_message_window("This entry is already open.", 2)
 
         elif self.diary.get_active_entry() == "":
             self.diary.set_active_entry(self.diary.gui_date_to_db_date(active_selection))
@@ -449,23 +532,19 @@ class GUI:
 
         anew.iconbitmap('../assets/diary.ico')
 
-        """current_day = int(datetime.today().strftime("%d"))
+        current_day = int(datetime.today().strftime("%d"))
         current_month = int(datetime.today().strftime("%m"))
-        current_year = int(datetime.today().strftime("%Y"))"""
+        current_year = int(datetime.today().strftime("%Y"))
 
         days_combobox = ttk.Combobox(anew, values=self.get_days_list(), state="readonly")
-        # days_combobox.set(current_day)
+        days_combobox.set(current_day)
         # days_combobox.current(current_day-1)
         months_combobox = ttk.Combobox(anew, values=self.get_months_list(), state="readonly")
-        # months_combobox.set(current_month)
+        months_combobox.set(current_month)
         # months_combobox.current(current_month-1)
         years_combobox = ttk.Combobox(anew, values=self.get_years_list(), state="readonly")
-        # years_combobox.set(current_year)
-        # years_combobox.current(10)
-
-        days_combobox.current(0)
-        months_combobox.current(0)
-        years_combobox.current(0)
+        years_combobox.set(current_year)
+        # years_combobox.current(current_year)
 
         anew_text_label = ttk.Label(anew, text="Pick a date")
         create_diary_button = ttk.Button(anew, text="Add new entry", command=lambda: self.add_new_entry_window_aux(int(days_combobox.get()), int(months_combobox.get()), int(years_combobox.get()), anew))
@@ -490,7 +569,7 @@ class GUI:
 
     def update_confirmation_window(self):
         ucw = tkinter.Toplevel()
-        ucw.title("Choose an action")
+        ucw.title("Save")
 
         diary_window_width = 400
         diary_window_height = 200
@@ -508,7 +587,7 @@ class GUI:
 
         ucw.iconbitmap('../assets/diary.ico')
 
-        aux_test1 = f"Are you sure you want to save the changes made in this entry?"
+        aux_test1 = f"Are you sure you want to save the changes made in this {self.diary.db_date_to_gui_date(self.diary.get_active_entry())} entry?"
 
         text_label1 = ttk.Label(ucw, text=aux_test1)
 
@@ -523,8 +602,8 @@ class GUI:
 
         text_label1.grid(column=1, row=1, sticky="N", padx=5, columnspan=2)
 
-        yes_button.grid(column=1, row=4, sticky="N", padx=5)
-        no_button.grid(column=2, row=4, sticky="N", padx=5)
+        yes_button.grid(column=1, row=4, sticky="N", padx=5, pady=5)
+        no_button.grid(column=2, row=4, sticky="N", padx=5, pady=5)
 
     def delete_active_entry_aux(self, deaw):
         self.diary.delete_entry()
@@ -534,7 +613,7 @@ class GUI:
         self.entries_list_box.select_set(0)
         self.save_button.configure(state="disabled")
         self.delete_entry_button.configure(state="disabled")
-        self.main_window_text_label.configure(text="Open an entry to edit it")
+        self.main_window_text_label.configure(text="Open an entry to edit it.")
         self.text_field.delete("1.0", tkinter.END)
 
         if len(self.diary.get_entries_from_open_diary()) == 0:
@@ -581,8 +660,8 @@ class GUI:
         text_label1.grid(column=1, row=1, sticky="N", padx=5, columnspan=2)
         text_label2.grid(column=1, row=2, sticky="N", padx=5, columnspan=2)
 
-        yes_button.grid(column=1, row=3, sticky="N", padx=5)
-        no_button.grid(column=2, row=3, sticky="N", padx=5)
+        yes_button.grid(column=1, row=3, sticky="N", padx=5, pady=5)
+        no_button.grid(column=2, row=3, sticky="N", padx=5, pady=5)
 
     def close_diary_window_aux(self, cdw):
         self.entries_list_content.initialize(value="")
@@ -591,7 +670,7 @@ class GUI:
         self.add_new_entry_button.configure(state="disabled")
         self.save_button.configure(state="disabled")
         self.delete_entry_button.configure(state="disabled")
-        self.main_window_text_label.configure(text="Open a diary to edit it")
+        self.main_window_text_label.configure(text="Open a diary to edit it.")
         self.text_field.delete("1.0", tkinter.END)
 
         self.diary.close_diary()
@@ -599,13 +678,13 @@ class GUI:
 
     def close_diary_window(self):
         if self.diary.get_open_diary_path() == "":
-            self.create_message_window("No diary is open.", 0)
+            self.create_message_window("Can't close a diary since no diary is open.", 0)
         else:
             cdw = tkinter.Toplevel()
             cdw.title("Close diary")
 
-            close_diary_window_width = 400
-            close_diary_window_height = 200
+            close_diary_window_width = 200
+            close_diary_window_height = 100
 
             center_x = int(self.screen_width / 2 - close_diary_window_width / 2)
             center_y = int(self.screen_height / 2 - close_diary_window_height / 2)
@@ -639,8 +718,8 @@ class GUI:
             text_label1.grid(column=1, row=1, sticky="N", padx=5, columnspan=2)
             text_label2.grid(column=1, row=2, sticky="N", padx=5, columnspan=2)
 
-            yes_button.grid(column=1, row=3, sticky="N", padx=5)
-            no_button.grid(column=2, row=3, sticky="N", padx=5)
+            yes_button.grid(column=1, row=3, sticky="N", padx=5, pady=5)
+            no_button.grid(column=2, row=3, sticky="N", padx=5, pady=5)
 
     def close_program_aux(self, cpw):
         self.entries_list_content.initialize(value="")
@@ -695,8 +774,8 @@ class GUI:
         text_label1.grid(column=1, row=1, sticky="N", padx=5, columnspan=2)
         text_label2.grid(column=1, row=2, sticky="N", padx=5, columnspan=2)
 
-        yes_button.grid(column=1, row=3, sticky="N", padx=5)
-        no_button.grid(column=2, row=3, sticky="N", padx=5)
+        yes_button.grid(column=1, row=3, sticky="N", padx=5, pady=5)
+        no_button.grid(column=2, row=3, sticky="N", padx=5, pady=5)
 
     def create_message_window(self, message_text, message_type):
         # If message type == 0, it's an error message
