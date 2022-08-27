@@ -163,22 +163,22 @@ class Diary:
         diary_path = f"{self.get_diaries_folder_path()}/{diary_name}{self.get_diaries_extension()}"
 
         if os.path.isfile(diary_path):
-            error_text = "ERROR: A diary with this name already exist, pick a new name."
+            error_text = "A diary with this name already exist, pick a new name."
             return error_text, False
 
         if not self.is_diary_name_valid(diary_name):
-            error_text = f"ERROR: The following characters are not allowed: {self.get_non_valid_characters()}, try again."
+            error_text = f"The following characters are not allowed: {self.get_non_valid_characters()}, try again."
             return error_text, False
 
         if len(diary_password) == 0:
-            error_text = f"ERROR: The password can't be empty"
+            error_text = f"The password can't be empty"
             return error_text, False
 
         encoded_password = base64.b64encode(diary_password.encode('ascii'))
 
         if (len(encoded_password) * 3) / 4 > 72:
             # Reason: https://stackoverflow.com/a/6793638
-            error_text = f"ERROR: The password is too long"
+            error_text = f"The password is too long"
             return error_text, False
 
         # We do this to ensure the folder exists, otherwise we can't create the databases for the diaries
@@ -212,14 +212,14 @@ class Diary:
             self.open_diary_path = ""
             self.cursor.close()
             self.db_connection.close()
-            error_text = f"ERROR: Wrong password, open the diary again"
+            error_text = f"Wrong password, open the diary again"
             return error_text, False
 
         return "", True
 
     def open_diary(self):
         if self.open_diary_path == "":
-            return "ERROR: No diary has been selected", False
+            return "No diary has been selected", False
         else:
             self.db_connection = sqlite3.connect(self.open_diary_path)
             self.cursor = self.db_connection.cursor()
