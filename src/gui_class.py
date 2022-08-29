@@ -213,7 +213,7 @@ class GUI:
 
         aw.iconbitmap('../assets/diary.ico')
 
-        text1_label = ttk.Label(aw, text="Your Pythonic secret diary 1.0", font="bold")
+        text1_label = ttk.Label(aw, text="Your Pythonic secret diary 1.01", font="bold")
         text2_label = ttk.Label(aw, text="My name is Manel and you can find more about me in GitHub at:")
 
         # How to change the cursor while hovering the text found here: https://stackoverflow.com/questions/45184462/how-do-i-change-my-cursor-to-a-hand-only-when-it-is-hovering-over-a-label
@@ -298,7 +298,7 @@ class GUI:
         password_box.grid(column=1, row=6, sticky="EW", padx=5)
         create_diary_button.grid(column=1, row=7, sticky="S", pady=5)
 
-    def ask_for_password_window_aux(self, password, wait_var, afpw):
+    def ask_for_password_window_aux(self, password, afpw):
         message, correct_password = self.diary.unlock_diary(password)
 
         if not correct_password:
@@ -319,11 +319,9 @@ class GUI:
             else:
                 self.open_entry_button.configure(state="!disabled")
 
-            wait_var = "Stop waiting"
-
         afpw.destroy()
 
-    def ask_for_password_window(self, wait_var):
+    def ask_for_password_window(self):
         afpw = tkinter.Toplevel()
         afpw.title("Introduce the password for this diary:")
 
@@ -346,7 +344,7 @@ class GUI:
 
         password = tkinter.StringVar()
         password_box = ttk.Entry(afpw, textvariable=password, show="*")
-        open_diary_button = ttk.Button(afpw, text="Open diary", command=lambda: self.ask_for_password_window_aux(password_box.get(), wait_var, afpw))
+        open_diary_button = ttk.Button(afpw, text="Open diary", command=lambda: self.ask_for_password_window_aux(password_box.get(), afpw))
 
         password_box.focus()
 
@@ -362,24 +360,24 @@ class GUI:
 
     def open_diary_window_aux(self, opw):
         opw.destroy()
+        self.diary.close_diary()
         self.open_entry_button.configure(state="disabled")
         self.add_new_entry_button.configure(state="disabled")
         self.save_button.configure(state="disabled")
         self.delete_entry_button.configure(state="disabled")
         self.main_window_text_label.configure(text="Open a diary to edit it.")
+        self.text_field.delete("1.0", tkinter.END)
         self.entries_list_content.initialize(value="")
         self.entries_list_box.configure(listvariable=self.entries_list_content)
 
         self.diary.set_open_diary_path(filedialog.askopenfilename(initialdir=self.diary.get_diaries_folder_path(), filetypes=(("Secret diary", f"{self.diary.get_diaries_extension()}"),)))
 
-        message, opened_diary = self.diary.open_diary()
+        message, open_diary = self.diary.open_diary()
 
-        if not opened_diary:
+        if not open_diary:
             self.create_message_window(message, 0)
         else:
-            wait_until_password = "Wait"
-            self.ask_for_password_window(wait_until_password)
-            self.root.wait_variable(wait_until_password)
+            self.ask_for_password_window()
 
     def open_diary_window(self):
         if self.diary.get_open_diary_path() != "":
@@ -402,7 +400,7 @@ class GUI:
 
             opw.iconbitmap('../assets/diary.ico')
 
-            aux_text1 = f"You want to open a new diary entry while the diary {self.diary.get_diary_name()} is open."
+            aux_text1 = f"You want to open a new diary while the diary {self.diary.get_diary_name()} is open."
             aux_text2 = f"You will lose any change you haven't saved in the diary {self.diary.get_diary_name()}."
             aux_text3 = f"Are you sure you want to continue?"
 
